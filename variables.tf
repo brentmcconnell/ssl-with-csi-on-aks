@@ -8,17 +8,17 @@ variable "resource_group_location" {
   description = "Location of the resource group."
 }
 
-variable "aks_service_principal_app_id" {
-  description = "Application ID/Client ID  of the service principal. Used by AKS to manage AKS related resources on Azure like vms, subnets."
-}
+# variable "aks_service_principal_app_id" {
+#   description = "Application ID/Client ID  of the service principal. Used by AKS to manage AKS related resources on Azure like vms, subnets."
+# }
 
-variable "aks_service_principal_client_secret" {
-  description = "Secret of the service principal. Used by AKS to manage Azure."
-}
+# variable "aks_service_principal_client_secret" {
+#   description = "Secret of the service principal. Used by AKS to manage Azure."
+# }
 
-variable "aks_service_principal_object_id" {
-  description = "Object ID of the service principal."
-}
+# variable "aks_service_principal_object_id" {
+#   description = "Object ID of the service principal."
+# }
 
 variable "virtual_network_name" {
   description = "Virtual network name"
