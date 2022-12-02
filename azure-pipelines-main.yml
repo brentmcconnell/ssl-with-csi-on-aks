@@ -1,0 +1,15 @@
+trigger:
+  branches:
+    include:
+    - main
+pool:
+  vmImage: 'ubuntu-latest'
+parameters:
+- name: DESTROY
+  displayName: 'Destroy infrastructure instead of create?'
+  type: boolean
+  default: false
+extends:
+  template: azure-pipelines.tmpl
+  parameters:
+    DESTROY: ${{parameters.DESTROY}}

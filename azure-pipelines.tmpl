@@ -1,0 +1,57 @@
+parameters:
+- name: DESTROY
+  displayName: 'Destroy infrastructure instead of create?'
+  type: boolean
+  default: false
+steps:
+#KEY VAULT TASK
+- task: AzureKeyVault@1
+  inputs:
+    azureSubscription: 'AZURE-SP'
+    KeyVaultName: 'spinfo-akspublic-kv'
+    SecretsFilter: 'SP-CLIENTID,SP-SUBSCRIPTIONID,SP-TENANTID,SP-PASSWORD'
+  displayName: 'Get key vault secrets as pipeline variables'
+# AZ LOGIN
+- script: |
+    az login --service-principal -u $(SP-CLIENTID) -p $(SP-PASSWORD) --tenant $(SP-TENANTID)
+  displayName: 'Login the az cli'
+#KEY VAULT TASK BECAUSE SA Account KEY is needed by TF
+- task: AzureKeyVault@1
+  inputs:
+    azureSubscription: 'AZURE-SP'
+    KeyVaultName: 'spinfo-akspublic-kv'
+    SecretsFilter: 'SA-ACCESS-KEY'
+  displayName: 'Get SA-ACCESS-KEY as pipeline variables'
+- script: |
+    # Run Terraform
+    set -x
+    export ARM_CLIENT_ID=$(SP-CLIENTID)
+    export ARM_CLIENT_SECRET=$(SP-PASSWORD)
+    export ARM_SUBSCRIPTION_ID=$(SP-SUBSCRIPTIONID)
+    export ARM_TENANT_ID=$(SP-TENANTID)
+    export ARM_ACCESS_KEY=$(SA-ACCESS-KEY)
+    export TERRA_WORKSPACE=$(ENVIRONMENT)
+    echo '#######Terraform Init########'
+    terraform init
+    terraform workspace select $TERRA_WORKSPACE || terraform workspace new $TERRA_WORKSPACE
+    echo '#######Terraform Plan########'
+    terraform plan -out=out.plan -var-file=terraform.tfvars -var="resource_group=$(RESOURCE_GROUP)" -var="environment=$(ENVIRONMENT)"
+    echo '#######Terraform Apply########'
+    terraform apply out.plan
+  displayName: 'Terraform Init, Plan and Apply '
+  condition: eq(${{ parameters.DESTROY }}, false)
+- script: |
+    # Destroy with Terraform
+    set -x
+    export ARM_CLIENT_ID=$(SP-CLIENTID)
+    export ARM_CLIENT_SECRET=$(SP-PASSWORD)
+    export ARM_SUBSCRIPTION_ID=$(SP-SUBSCRIPTIONID)
+    export ARM_TENANT_ID=$(SP-TENANTID)
+    export ARM_ACCESS_KEY=$(SA-ACCESS-KEY)
+    export TERRA_WORKSPACE=$(ENVIRONMENT)
+    echo '#######Terraform Init########'
+    terraform init
+    terraform workspace select $TERRA_WORKSPACE || terraform workspace new $TERRA_WORKSPACE
+    terraform destroy --auto-approve -var-file=terraform.tfvars -var="resource_group=$(RESOURCE_GROUP)" -var="environment=$(ENVIRONMENT)"
+  displayName: 'Terraform Destroy '
+  condition: ${{ parameters.DESTROY }}
