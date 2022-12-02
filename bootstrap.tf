@@ -21,5 +21,5 @@ resource azurerm_storage_account storage-acct {
   resource_group_name       = local.resource_group 
   account_tier              = "Standard"
   account_replication_type  = "LRS"
-  tags                      = local.common_tags
+  tags                      = local.tags
 }

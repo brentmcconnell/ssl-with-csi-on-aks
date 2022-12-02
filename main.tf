@@ -30,7 +30,7 @@ resource "azurerm_virtual_network" "vnet" {
   name                = var.virtual_network_name
   location            = local.location
   resource_group_name = local.resource_group 
-  address_space       = []
+  address_space       = [var.virtual_network_address_prefix]
 
   subnet {
     name           = var.aks_subnet_name
