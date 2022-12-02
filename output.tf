@@ -1,5 +1,5 @@
 output "resource_group_name" {
-  value = azurerm_resource_group.rg.name
+  value = data.azurerm_resource_group.project-rg.name
 }
 
 output "client_key" {
@@ -32,13 +32,13 @@ output "host" {
 }
 
 output "identity_resource_id" {
-  value = azurerm_user_assigned_identity.testIdentity.id
+  value = azurerm_user_assigned_identity.aksIdentity.id
 }
 
 output "identity_client_id" {
-  value = azurerm_user_assigned_identity.testIdentity.client_id
+  value = azurerm_user_assigned_identity.aksIdentity.client_id
 }
 
 output "application_ip_address" {
-  value = azurerm_public_ip.test.ip_address
+  value = azurerm_public_ip.pub_ip.ip_address
 }

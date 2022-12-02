@@ -5,7 +5,7 @@ locals {
   environment                    = lower(var.environment)
   prefix_minus                   = replace(local.prefix, "-", "")
   location                       = var.location 
-  vnet                           = azurerm_virtual_nework.vnet.name
+  vnet                           = azurerm_virtual_network.vnet.name
   backend_address_pool_name      = "${local.vnet}-beap"
   frontend_port_name             = "${local.vnet}-feport"
   frontend_ip_configuration_name = "${local.vnet}-feip"
@@ -13,7 +13,7 @@ locals {
   listener_name                  = "${local.vnet}-httplstn"
   request_routing_rule_name      = "${local.vnet}-rqrt"
   app_gateway_subnet_name        = "appgwsubnet"
-  common_tags = { 
+  tags = { 
     created_by = "Terraform" 
   }
 }
