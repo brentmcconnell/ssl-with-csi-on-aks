@@ -18,13 +18,13 @@ locals {
   }
 }
 
-# User Assigned Identities 
-resource "azurerm_user_assigned_identity" "aksIdentity" {
-  location            = local.location
-  resource_group_name = local.resource_group 
-  name                = "identity1"
-  tags                = local.tags
-}
+# # User Assigned Identities 
+# resource "azurerm_user_assigned_identity" "aksIdentity" {
+#   location            = local.location
+#   resource_group_name = local.resource_group 
+#   name                = "identity1"
+#   tags                = local.tags
+# }
 
 resource "azurerm_virtual_network" "vnet" {
   name                = var.virtual_network_name
@@ -136,21 +136,21 @@ resource "azurerm_application_gateway" "network" {
 resource "azurerm_role_assignment" "ra1" {
   scope                = data.azurerm_subnet.kubesubnet.id
   role_definition_name = "Network Contributor"
-  principal_id         = azurerm_user_assigned_identity.askIdentity.principal_id 
+  principal_id         = azurerm_kubernetes_cluster.aks.kubelet_identity[0].object_id
   depends_on           = [azurerm_virtual_network.vnet]
 }
 
 resource "azurerm_role_assignment" "ra3" {
   scope                = azurerm_application_gateway.network.id
   role_definition_name = "Contributor"
-  principal_id         = azurerm_user_assigned_identity.askIdentity.principal_id 
+  principal_id         = azurerm_kubernetes_cluster.aks.kubelet_identity[0].object_id
   depends_on           = [azurerm_user_assigned_identity.aksIdentity, azurerm_application_gateway.network]
 }
 
 resource "azurerm_role_assignment" "ra4" {
   scope                = data.azurerm_resource_group.project-rg.id
   role_definition_name = "Reader"
-  principal_id         = azurerm_user_assigned_identity.aksIdentity.principal_id
+  principal_id         = azurerm_kubernetes_cluster.aks.kubelet_identity[0].object_id
   depends_on           = [azurerm_user_assigned_identity.aksIdentity, azurerm_application_gateway.network]
 }
 
@@ -160,7 +160,8 @@ resource "azurerm_kubernetes_cluster" "k8s" {
   resource_group_name = local.resource_group 
   dns_prefix          = var.aks_dns_prefix
 
-  http_application_routing_enabled = false
+  http_application_routing_enabled  = false
+  role_based_access_control_enabled = true
 
   linux_profile {
     admin_username = var.vm_user_name
@@ -171,8 +172,7 @@ resource "azurerm_kubernetes_cluster" "k8s" {
   }
 
   identity {
-    type  = "UserAssigned"
-    user_assigned_identity_id = azurerm_user_assigned_identity.aksIdentity.id
+    type  = "SystemAssigned"
   }
 
   default_node_pool {
@@ -188,10 +188,6 @@ resource "azurerm_kubernetes_cluster" "k8s" {
     dns_service_ip     = var.aks_dns_service_ip
     docker_bridge_cidr = var.aks_docker_bridge_cidr
     service_cidr       = var.aks_service_cidr
-  }
-
-  role_based_access_control {
-    enabled = var.aks_enable_rbac
   }
 
   depends_on = [azurerm_virtual_network.vnet, azurerm_application_gateway.network]
