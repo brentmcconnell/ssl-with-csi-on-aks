@@ -35,7 +35,7 @@ steps:
     terraform init
     terraform workspace select $TERRA_WORKSPACE || terraform workspace new $TERRA_WORKSPACE
     echo '#######Terraform Plan########'
-    terraform plan -out=out.plan -var-file=terraform.tfvars -var="resource_group=$(RESOURCE_GROUP)" -var="environment=$(ENVIRONMENT)"
+    terraform plan -out=out.plan -var-file=terraform.tfvars -var="resource_group=$(RESOURCE_GROUP)" -var="environment=$(ENVIRONMENT)" -var="public_ssh_key_path=$(public_ssh_key_path)"
     echo '#######Terraform Apply########'
     terraform apply out.plan
   displayName: 'Terraform Init, Plan and Apply '
@@ -52,6 +52,7 @@ steps:
     echo '#######Terraform Init########'
     terraform init
     terraform workspace select $TERRA_WORKSPACE || terraform workspace new $TERRA_WORKSPACE
-    terraform destroy --auto-approve -var-file=terraform.tfvars -var="resource_group=$(RESOURCE_GROUP)" -var="environment=$(ENVIRONMENT)"
+    terraform destroy --auto-approve -var-file=terraform.tfvars -var="resource_group=$(RESOURCE_GROUP)" -var="environment=$(ENVIRONMENT)"  -var="public_ssh_key_path=$(public_ssh_key_path)"
+
   displayName: 'Terraform Destroy '
   condition: ${{ parameters.DESTROY }}
