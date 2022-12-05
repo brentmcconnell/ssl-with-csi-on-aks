@@ -136,22 +136,22 @@ resource "azurerm_application_gateway" "network" {
 resource "azurerm_role_assignment" "ra1" {
   scope                = data.azurerm_subnet.kubesubnet.id
   role_definition_name = "Network Contributor"
-  principal_id         = azurerm_kubernetes_cluster.aks.kubelet_identity[0].object_id
+  principal_id         = azurerm_kubernetes_cluster.k8s.kubelet_identity[0].object_id
   depends_on           = [azurerm_virtual_network.vnet]
 }
 
 resource "azurerm_role_assignment" "ra3" {
   scope                = azurerm_application_gateway.network.id
   role_definition_name = "Contributor"
-  principal_id         = azurerm_kubernetes_cluster.aks.kubelet_identity[0].object_id
-  depends_on           = [azurerm_user_assigned_identity.aksIdentity, azurerm_application_gateway.network]
+  principal_id         = azurerm_kubernetes_cluster.k8s.kubelet_identity[0].object_id
+  depends_on           = [azurerm_application_gateway.network]
 }
 
 resource "azurerm_role_assignment" "ra4" {
   scope                = data.azurerm_resource_group.project-rg.id
   role_definition_name = "Reader"
-  principal_id         = azurerm_kubernetes_cluster.aks.kubelet_identity[0].object_id
-  depends_on           = [azurerm_user_assigned_identity.aksIdentity, azurerm_application_gateway.network]
+  principal_id         = azurerm_kubernetes_cluster.k8s.kubelet_identity[0].object_id
+  depends_on           = [azurerm_application_gateway.network]
 }
 
 resource "azurerm_kubernetes_cluster" "k8s" {
