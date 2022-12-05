@@ -116,6 +116,5 @@ variable "vm_user_name" {
 
 variable "public_ssh_key_path" {
   description = "Public key path for SSH."
-  default     = "~/.ssh/id_rsa.pub"
 }
 
