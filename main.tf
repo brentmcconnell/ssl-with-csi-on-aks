@@ -136,27 +136,19 @@ resource "azurerm_application_gateway" "network" {
 resource "azurerm_role_assignment" "ra1" {
   scope                = data.azurerm_subnet.kubesubnet.id
   role_definition_name = "Network Contributor"
-  principal_id         = var.aks_service_principal_object_id
-
-  depends_on = [azurerm_virtual_network.vnet]
-}
-
-resource "azurerm_role_assignment" "ra2" {
-  scope                = azurerm_user_assigned_identity.aksIdentity.id
-  role_definition_name = "Managed Identity Operator"
-  principal_id         = data.client_config.current.client_id
-  depends_on           = [azurerm_user_assigned_identity.aksIdentity]
+  principal_id         = azurerm_user_assigned_identity.askIdentity.principal_id 
+  depends_on           = [azurerm_virtual_network.vnet]
 }
 
 resource "azurerm_role_assignment" "ra3" {
   scope                = azurerm_application_gateway.network.id
   role_definition_name = "Contributor"
-  principal_id         = data.client_config.current.client_id
+  principal_id         = azurerm_user_assigned_identity.askIdentity.principal_id 
   depends_on           = [azurerm_user_assigned_identity.aksIdentity, azurerm_application_gateway.network]
 }
 
 resource "azurerm_role_assignment" "ra4" {
-  scope                = azurerm_resource_group.rg.id
+  scope                = data.azurerm_resource_group.project-rg.id
   role_definition_name = "Reader"
   principal_id         = azurerm_user_assigned_identity.aksIdentity.principal_id
   depends_on           = [azurerm_user_assigned_identity.aksIdentity, azurerm_application_gateway.network]
@@ -178,17 +170,17 @@ resource "azurerm_kubernetes_cluster" "k8s" {
     }
   }
 
+  identity {
+    type  = "UserAssigned"
+    user_assigned_identity_id = azurerm_user_assigned_identity.aksIdentity.id
+  }
+
   default_node_pool {
     name            = "agentpool"
     node_count      = var.aks_agent_count
     vm_size         = var.aks_agent_vm_size
     os_disk_size_gb = var.aks_agent_os_disk_size
     vnet_subnet_id  = data.azurerm_subnet.kubesubnet.id
-  }
-
-  service_principal {
-    client_id     = var.aks_service_principal_app_id
-    client_secret = var.aks_service_principal_client_secret
   }
 
   network_profile {
