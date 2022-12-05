@@ -31,14 +31,6 @@ output "host" {
   value = azurerm_kubernetes_cluster.k8s.kube_config.0.host
 }
 
-output "identity_resource_id" {
-  value = azurerm_user_assigned_identity.aksIdentity.id
-}
-
-output "identity_client_id" {
-  value = azurerm_user_assigned_identity.aksIdentity.client_id
-}
-
 output "application_ip_address" {
   value = azurerm_public_ip.pub_ip.ip_address
 }
