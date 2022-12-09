@@ -5,30 +5,11 @@ locals {
   environment                    = lower(var.environment)
   prefix_minus                   = replace(local.prefix, "-", "")
   location                       = var.location 
-  vnet                           = azurerm_virtual_network.vnet.name
-  backend_address_pool_name      = "${local.vnet}-beap"
-  frontend_port_name             = "${local.vnet}-feport"
-  frontend_ip_configuration_name = "${local.vnet}-feip"
-  http_setting_name              = "${local.vnet}-be-htst"
-  listener_name                  = "${local.vnet}-httplstn"
-  request_routing_rule_name      = "${local.vnet}-rqrt"
-  app_gateway_subnet_name        = "appgwsubnet"
-  tags = { 
-    created_by = "Terraform" 
-  }
 }
 
-# # User Assigned Identities 
-# resource "azurerm_user_assigned_identity" "aksIdentity" {
-#   location            = local.location
-#   resource_group_name = local.resource_group 
-#   name                = "identity1"
-#   tags                = local.tags
-# }
-
 resource "azurerm_virtual_network" "vnet" {
-  name                = var.virtual_network_name
-  location            = local.location
+  name                = "${local.prefix}-${local.environment}-vnet"
+  location            = local.location 
   resource_group_name = local.resource_group 
   address_space       = [var.virtual_network_address_prefix]
 
@@ -36,122 +17,31 @@ resource "azurerm_virtual_network" "vnet" {
     name           = var.aks_subnet_name
     address_prefix = var.aks_subnet_address_prefix
   }
-
-  subnet {
-    name           = "appgwsubnet"
-    address_prefix = var.app_gateway_subnet_address_prefix
-  }
-
-  tags = local.tags
 }
 
 data "azurerm_subnet" "kubesubnet" {
   name                 = var.aks_subnet_name
-  virtual_network_name = local.vnet
+  virtual_network_name = azurerm_virtual_network.vnet.name
   resource_group_name  = local.resource_group 
   depends_on           = [azurerm_virtual_network.vnet]
 }
-
-data "azurerm_subnet" "appgwsubnet" {
-  name                 = "appgwsubnet"
-  virtual_network_name = local.vnet
-  resource_group_name  = local.resource_group 
-  depends_on           = [azurerm_virtual_network.vnet]
-}
-
-#Public Public Ip 
-resource "azurerm_public_ip" "pub_ip" {
-  name                = "publicIp1"
-  location            = local.location
-  resource_group_name = local.resource_group 
-  allocation_method   = "Static"
-  sku                 = "Standard"
-
-  tags = local.tags
-}
-
-# resource "azurerm_application_gateway" "network" {
-#   name                = var.app_gateway_name
-#   location            = local.location
-#   resource_group_name = local.resource_group 
-
-#   sku {
-#     name     = var.app_gateway_sku
-#     tier     = "Standard_v2"
-#     capacity = 2
-#   }
-
-#   gateway_ip_configuration {
-#     name      = "appGatewayIpConfig"
-#     subnet_id = data.azurerm_subnet.appgwsubnet.id
-#   }
-
-#   frontend_port {
-#     name = local.frontend_port_name
-#     port = 80
-#   }
-
-#   frontend_port {
-#     name = "httpsPort"
-#     port = 443
-#   }
-
-#   frontend_ip_configuration {
-#     name                 = local.frontend_ip_configuration_name
-#     public_ip_address_id = azurerm_public_ip.pub_ip.id
-#   }
-
-#   backend_address_pool {
-#     name = local.backend_address_pool_name
-#   }
-
-#   backend_http_settings {
-#     name                  = local.http_setting_name
-#     cookie_based_affinity = "Disabled"
-#     port                  = 80
-#     protocol              = "Http"
-#     request_timeout       = 1
-#   }
-
-#   http_listener {
-#     name                           = local.listener_name
-#     frontend_ip_configuration_name = local.frontend_ip_configuration_name
-#     frontend_port_name             = local.frontend_port_name
-#     protocol                       = "Http"
-#   }
-
-#   request_routing_rule {
-#     name                       = local.request_routing_rule_name
-#     rule_type                  = "Basic"
-#     http_listener_name         = local.listener_name
-#     backend_address_pool_name  = local.backend_address_pool_name
-#     backend_http_settings_name = local.http_setting_name
-#     priority                   = 10
-#   }
-
-#   tags = local.tags
-
-#   depends_on = [azurerm_virtual_network.vnet, azurerm_public_ip.pub_ip]
-# }
 
 resource "azurerm_role_assignment" "ra1" {
-  scope                = data.azurerm_subnet.kubesubnet.id
-  role_definition_name = "Network Contributor"
+  scope                = data.azurerm_resource_group.project-rg.id
+  role_definition_name = "Contributor"
   principal_id         = azurerm_kubernetes_cluster.k8s.kubelet_identity[0].object_id
-  depends_on           = [azurerm_virtual_network.vnet]
 }
 
-# resource "azurerm_role_assignment" "ra3" {
-#   scope                = azurerm_application_gateway.network.id
-#   role_definition_name = "Contributor"
-#   principal_id         = azurerm_kubernetes_cluster.k8s.kubelet_identity[0].object_id
-#   depends_on           = [azurerm_application_gateway.network]
-# }
-
-resource "azurerm_role_assignment" "ra4" {
+resource "azurerm_role_assignment" "ra2" {
   scope                = data.azurerm_resource_group.project-rg.id
-  role_definition_name = "Reader"
-  principal_id         = azurerm_kubernetes_cluster.k8s.kubelet_identity[0].object_id
+  role_definition_name = "Contributor"
+  principal_id         = azurerm_kubernetes_cluster.k8s.identity[0].principal_id
+}
+
+resource "azurerm_role_assignment" "ra3" {
+  scope                = data.azurerm_subnet.kubesubnet.id
+  role_definition_name = "Network Contributor"
+  principal_id         = azurerm_kubernetes_cluster.k8s.identity[0].principal_id
 }
 
 resource "azurerm_kubernetes_cluster" "k8s" {
@@ -163,12 +53,16 @@ resource "azurerm_kubernetes_cluster" "k8s" {
   http_application_routing_enabled  = false
   role_based_access_control_enabled = true
 
+
   linux_profile {
     admin_username = var.vm_user_name
-
     ssh_key {
-      key_data = var.public_ssh_key_path
+      key_data = file(var.public_ssh_key_path)
     }
+  }
+
+  key_vault_secrets_provider {
+    secret_rotation_enabled = false
   }
 
   identity {
@@ -184,13 +78,75 @@ resource "azurerm_kubernetes_cluster" "k8s" {
   }
 
   network_profile {
-    network_plugin     = "azure"
+    network_plugin     = "kubenet"
     dns_service_ip     = var.aks_dns_service_ip
     docker_bridge_cidr = var.aks_docker_bridge_cidr
     service_cidr       = var.aks_service_cidr
   }
+}
 
-  depends_on = [azurerm_virtual_network.vnet]
-  #depends_on = [azurerm_virtual_network.vnet, azurerm_application_gateway.network]
-  tags       = local.tags
+resource "azurerm_key_vault" "vault" {
+  name                = "${local.prefix}-${local.environment}-kv"
+  location            = local.location
+  resource_group_name = local.resource_group
+  sku_name            = "standard"
+  tenant_id           = data.azurerm_client_config.current.tenant_id
+}
+
+resource "azurerm_key_vault_access_policy" "pipeline-access" {
+  key_vault_id = azurerm_key_vault.vault.id
+  tenant_id    = data.azurerm_client_config.current.tenant_id
+  object_id    = data.azurerm_client_config.current.object_id
+  key_permissions = [
+    "Get", "List", "Create", "Delete", "Encrypt", "Decrypt", "UnwrapKey", "WrapKey", "Purge", "Recover", "Restore"
+  ]
+  secret_permissions = [
+    "Get", "List", "Set", "Delete", "Purge", "Recover", "Restore"
+  ]
+  certificate_permissions = [
+    "Backup", "Create", "Delete", "Get", "Import", "List", "Purge", "Recover", "Restore", "Update"
+  ]
+  storage_permissions = [
+    "Get", "List", "Set", "Delete", "Purge", "Recover", "Restore"
+  ]
+}
+
+resource "azurerm_key_vault_access_policy" "k8s-secrets-access" {
+  key_vault_id = azurerm_key_vault.vault.id
+  tenant_id    = data.azurerm_client_config.current.tenant_id
+  object_id    = azurerm_kubernetes_cluster.k8s.key_vault_secrets_provider[0].secret_identity[0].object_id
+  key_permissions = [
+    "Get", "List", "Create", "Delete", "Encrypt", "Decrypt", "UnwrapKey", "WrapKey", "Purge", "Recover", "Restore"
+  ]
+  secret_permissions = [
+    "Get", "List", "Set", "Delete", "Purge", "Recover", "Restore"
+  ]
+  certificate_permissions = [
+    "Backup", "Create", "Delete", "Get", "Import", "List", "Purge", "Recover", "Restore", "Update"
+  ]
+  storage_permissions = [
+    "Get", "List", "Set", "Delete", "Purge", "Recover", "Restore"
+  ]
+}
+
+resource "azurerm_public_ip" "nginx" {
+  name                = "NGINXPublicIp"
+  location            = local.location
+  resource_group_name = local.resource_group
+  allocation_method   = "Static"
+  sku                 = "Standard"
+}
+
+output "client_certificate" {
+  value     = azurerm_kubernetes_cluster.k8s.kube_config.0.client_certificate
+  sensitive = true
+}
+
+output "kube_config" {
+  value = azurerm_kubernetes_cluster.k8s.kube_config_raw
+  sensitive = true
+}
+
+output "secret_identity_client_id" {
+  value = azurerm_kubernetes_cluster.k8s.key_vault_secrets_provider[0].secret_identity[0].object_id
 }

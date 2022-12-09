@@ -8,23 +8,6 @@ variable "resource_group_location" {
   description = "Location of the resource group."
 }
 
-# variable "aks_service_principal_app_id" {
-#   description = "Application ID/Client ID  of the service principal. Used by AKS to manage AKS related resources on Azure like vms, subnets."
-# }
-
-# variable "aks_service_principal_client_secret" {
-#   description = "Secret of the service principal. Used by AKS to manage Azure."
-# }
-
-# variable "aks_service_principal_object_id" {
-#   description = "Object ID of the service principal."
-# }
-
-variable "virtual_network_name" {
-  description = "Virtual network name"
-  default     = "aksVirtualNetwork"
-}
-
 variable "virtual_network_address_prefix" {
   description = "VNET address prefix"
   default     = "192.168.0.0/16"
@@ -40,29 +23,9 @@ variable "aks_subnet_address_prefix" {
   default     = "192.168.0.0/24"
 }
 
-variable "app_gateway_subnet_address_prefix" {
-  description = "Subnet server IP address."
-  default     = "192.168.1.0/24"
-}
-
-variable "app_gateway_name" {
-  description = "Name of the Application Gateway"
-  default     = "ApplicationGateway1"
-}
-
-variable "app_gateway_sku" {
-  description = "Name of the Application Gateway SKU"
-  default     = "Standard_v2"
-}
-
-variable "app_gateway_tier" {
-  description = "Tier of the Application Gateway tier"
-  default     = "Standard_v2"
-}
-
 variable "aks_name" {
   description = "AKS cluster name"
-  default     = "aks-cluster1"
+  default     = "aks-cluster"
 }
 variable "aks_dns_prefix" {
   description = "Optional DNS prefix to use with hosted Kubernetes API server FQDN."
@@ -116,5 +79,6 @@ variable "vm_user_name" {
 
 variable "public_ssh_key_path" {
   description = "Public key path for SSH."
+  default     = "~/.ssh/id_rsa.pub"
 }
 
