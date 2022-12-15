@@ -150,3 +150,7 @@ output "kube_config" {
 output "secret_identity_client_id" {
   value = azurerm_kubernetes_cluster.k8s.key_vault_secrets_provider[0].secret_identity[0].object_id
 }
+
+output "public_ip" {
+  value = azurerm_public_ip.nginx.ip_address
+}
