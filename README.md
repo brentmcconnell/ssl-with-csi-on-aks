@@ -1,4 +1,4 @@
-* Start with basic AKS public cluster provided by this Terraform repo.  Change terraform.tfvars and variables.tf before running to suit your needs.
+* Start with basic AKS public cluster provided by this Terraform repo.  Change terraform.tfvars and variables.tf before running to suit your needs.  This requires an existing resource group be provided.
 * Upload cert with “az keyvault certificate import --vault-name NAME_OF_KEYVAULT -n NAME_OF_CERT_IN_KV -f CERTIFICATE.PFX”
 * Pull AKS credential to local environment with “az aks get-credentials -n AKS_CLUSTER_NAME -g AKS_RG_NAME”
 * Verify you can see AKS cluster resources with “kubectl get nodes” from your local command line tool
